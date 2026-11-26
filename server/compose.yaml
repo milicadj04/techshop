@@ -1,0 +1,52 @@
+name: techshop
+
+services:
+  techshop-server:
+    build:
+      context: ./server
+    container_name: techshop-server
+    env_file:
+      - ./server/.env
+    environment:
+      - PORT=8000
+      - NODE_ENV=development
+    volumes:
+      - ./server:/app
+      - server_node_modules:/app/node_modules
+    ports:
+      - '8000:8000'
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'curl', '-fsS', 'http://127.0.0.1:8000/api']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  techshop-client:
+    build:
+      context: ./client
+    container_name: techshop-client
+    environment:
+      - HOST=0.0.0.0
+      - CHOKIDAR_USEPOLLING=true
+      - WDS_SOCKET_PORT=0
+    volumes:
+      - ./client:/app
+      - client_node_modules:/app/node_modules
+    ports:
+      - '3000:3000'
+    restart: unless-stopped
+    depends_on:
+      techshop-server:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'curl', '-fsS', 'http://127.0.0.1:3000/']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+volumes:
+  server_node_modules:
+  client_node_modules:
